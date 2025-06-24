@@ -1,7 +1,25 @@
+#ifndef MACCOUNT_EXPORT
+
 #include <string>
 #include <cstdio>
 #include <unordered_map>
 #include <unordered_set>
+
+#ifdef _WIN32
+    #ifdef BUILD_MACCOUNT
+        #define MACCOUNT_EXPORT __declspec(dllexport)
+    #else
+        #define MACCOUNT_EXPORT __declspec(dllimport)
+    #endif
+#elif defined(__GNUC__) || defined(__clang__)
+    #ifdef BUILD_MACCOUNT
+        #define MACCOUNT_EXPORT __attribute__((visibility("default")))
+    #else
+        #define MACCOUNT_EXPORT
+    #endif
+#else
+    #error "Unknown platform, please define export/import macros."
+#endif
 
 namespace ma {
 
@@ -10,10 +28,14 @@ namespace ma {
         std::string alias;
     };
 
-    class Instance {
+    class MACCOUNT_EXPORT Instance {
         public:
             Instance() { instance = this; }
             ~Instance() {
+                if (instance == nullptr) {
+                    return;
+                }
+
                 for (auto& [ptr, record] : instance->memoryRecords) {
                     printf("Memory not cleaned up: [%x] %s\n", (size_t)ptr, record.alias.c_str());
                 }
@@ -52,6 +74,10 @@ namespace ma {
                 instance->memoryRecords.erase(ptr);
             }
 
+            void disable() {
+                instance = nullptr;
+            }
+
         private:
             static Instance* instance;
 
@@ -59,11 +85,13 @@ namespace ma {
             std::unordered_set<void*> freedMemory;
     };
 
-    void track(void* ptr, const std::string& alias = "") {
+    void MACCOUNT_EXPORT track(void* ptr, const std::string& alias = "") {
         Instance::__track(ptr, alias);
     }
 
-    void untrack(void* ptr) {
+    void MACCOUNT_EXPORT untrack(void* ptr) {
         Instance::__untrack(ptr);
     }
 };
+
+#endif
