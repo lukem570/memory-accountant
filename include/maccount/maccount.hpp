@@ -37,7 +37,7 @@ namespace ma {
                 }
 
                 for (auto& [ptr, record] : instance->memoryRecords) {
-                    printf("Memory not cleaned up: [%x] %s\n", (size_t)ptr, record.alias.c_str());
+                    printf("Memory not cleaned up: [%lx] %s\n", (size_t)ptr, record.alias.c_str());
                 }
             }
 
@@ -62,12 +62,12 @@ namespace ma {
                 }
 
                 if (instance->freedMemory.find(ptr) != instance->freedMemory.end()) {
-                    printf("Attempted double free at: '%x'\n", (size_t)ptr);
+                    printf("Attempted double free at: '%lx'\n", (size_t)ptr);
                     return;
                 }
 
                 if (instance->memoryRecords.find(ptr) == instance->memoryRecords.end()) {
-                    printf("Attempted to delete untracked pointer at: '%x'\n", (size_t)ptr);
+                    printf("Attempted to delete untracked pointer at: '%lx'\n", (size_t)ptr);
                     return;
                 }
 
@@ -84,6 +84,8 @@ namespace ma {
             std::unordered_map<void*, TrackedMemoryRecord> memoryRecords;
             std::unordered_set<void*> freedMemory;
     };
+
+    ma::Instance* ma::Instance::instance = nullptr;
 
     void MACCOUNT_EXPORT track(void* ptr, const std::string& alias = "") {
         Instance::__track(ptr, alias);
